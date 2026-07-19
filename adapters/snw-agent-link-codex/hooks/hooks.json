@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/session-start.py",
+            "statusMessage": "初始化 snw-agent-link 会话绑定"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/user-prompt-submit.py",
+            "statusMessage": "检查 snw-agent-link 未读消息"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/stop.py",
+            "statusMessage": "保存 snw-agent-link thread 状态"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,121 @@
+name: spec-driven-zh
+version: 1
+description: 默认中文 OpenSpec 工作流 - proposal → specs → design → tasks
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: 变更提案文档
+    template: proposal.md
+    instruction: |
+      使用简体中文撰写 proposal.md，说明为什么要做这个变更。
+
+      章节要求：
+      - **为什么**：用 1-2 句话说明问题或机会点。这个变更解决什么问题？为什么现在做？
+      - **变更内容**：使用项目符号列出会发生的变化。明确写出新增能力、修改项或移除项。若有破坏性变更，用 **BREAKING** 标记。
+      - **能力范围**：明确哪些 specs 会被新增或修改：
+        - **新增能力**：列出本次引入的 capability。每个 capability 对应一个新的 `specs/<name>/spec.md`，名称必须使用 kebab-case。
+        - **修改能力**：列出现有 capability 中哪些 REQUIREMENTS 会发生变化。只有当 spec 层行为发生变化时才列出；纯实现细节不要写进来。每个修改能力都需要对应 delta spec。
+      - **影响范围**：受影响的代码、API、依赖、模块或系统边界。
+
+      重要说明：**能力范围** 章节非常关键，它是 proposal 阶段与 specs 阶段之间的契约。
+      在填写前请先调研现有 specs。这里列出的每个 capability 都必须有对应的 spec 文件。
+
+      保持简洁（通常 1-2 页）。重点写“为什么”，不要展开实现细节；实现细节应放到 design.md 中。
+    requires: []
+
+  - id: specs
+    generates: specs/**/*.md
+    description: 变更对应的详细规格说明
+    template: spec.md
+    instruction: |
+      使用简体中文编写 specs，定义系统“应该做什么”。
+
+      请为 proposal 中“能力范围”列出的每个 capability 创建一个 spec 文件：
+      - 新增能力：使用 proposal 中的 kebab-case 名称创建 `specs/<capability>/spec.md`
+      - 修改能力：使用现有主规范的 folder 名称，在 `specs/<capability>/spec.md` 中创建 delta spec
+
+      **重要：为了兼容 OpenSpec 校验、sync 和 archive，以下结构标记必须保留英文原样：**
+      - `## ADDED Requirements`
+      - `## MODIFIED Requirements`
+      - `## REMOVED Requirements`
+      - `## RENAMED Requirements`
+      - `### Requirement: <name>`
+      - `#### Scenario: <name>`
+
+      你可以将 requirement 描述、scenario 内容、Reason / Migration 的正文写成简体中文。
+
+      Delta 操作说明：
+      - **ADDED Requirements**：新增能力
+      - **MODIFIED Requirements**：行为变化，必须包含更新后的完整 requirement 内容
+      - **REMOVED Requirements**：废弃功能，必须包含 **Reason** 和 **Migration**
+      - **RENAMED Requirements**：仅名称变化，使用 FROM:/TO: 格式
+
+      格式要求：
+      - 每个 requirement 使用 `### Requirement: <name>`，后面跟 requirement 描述
+      - 规范性语句继续使用 SHALL / MUST
+      - 每个 scenario 使用 `#### Scenario: <name>`，正文写 WHEN / THEN 场景
+      - Scenario 必须严格使用 4 个井号（`####`）
+      - 每个 requirement 至少包含一个 scenario
+
+      修改现有 requirement 的推荐流程：
+      1. 在 `openspec/specs/<capability>/spec.md` 中找到现有 requirement
+      2. 复制完整 requirement 块（从 `### Requirement:` 到该 requirement 下所有 scenarios）
+      3. 粘贴到 `## MODIFIED Requirements` 下并修改为新行为
+      4. 保持 requirement 标题文本与原文精确对应（忽略空白差异）
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: 技术设计文档
+    template: design.md
+    instruction: |
+      使用简体中文编写 design.md，说明“如何实现”这次变更。
+
+      适合写 design.md 的情况包括：
+      - 跨多个模块/服务的改动，或引入新的架构模式
+      - 新增外部依赖，或有明显的数据模型变化
+      - 存在安全、性能、迁移方面的复杂度
+      - 在编码前先澄清技术决策会明显降低风险
+
+      章节要求：
+      - **背景**：当前状态、约束、上下文、相关角色
+      - **目标 / 非目标**：本设计要达成什么、明确不做什么
+      - **设计决策**：关键技术选择及其原因（为什么选 X 而不是 Y），并说明考虑过的替代方案
+      - **风险 / 权衡**：已知限制与潜在风险，格式可写成 `[风险] → 缓解措施`
+      - **迁移方案**：上线步骤、回滚方案（如适用）
+      - **开放问题**：尚未决定或需要后续确认的问题
+
+      聚焦架构和方法，不要写成逐行实现说明。设计文档应基于 proposal 的动机和 specs 的要求展开。
+    requires:
+      - proposal
+
+  - id: tasks
+    generates: tasks.md
+    description: 可跟踪的实施任务清单
+    template: tasks.md
+    instruction: |
+      使用简体中文编写 tasks.md，把实现工作拆成可执行、可追踪的任务。
+
+      **重要：必须严格遵守复选框格式。** apply 阶段依赖 `- [ ]` / `- [x]` 跟踪任务进度。
+
+      编写规则：
+      - 用 `##` 数字标题组织任务组
+      - 每个任务都必须写成复选框：`- [ ] X.Y 任务描述`
+      - 任务粒度应足够小，最好一轮就能完成
+      - 按依赖顺序排序：先做必须的前置，再做后续任务
+
+      请参考 specs 决定做什么，参考 design 决定如何做。
+      每个任务都应具有可验证的完成标准。
+    requires:
+      - specs
+      - design
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    读取上下文文件，逐项完成未完成任务，并在完成后更新勾选状态。
+    如果遇到阻塞或需要澄清的问题，请暂停并明确说明。

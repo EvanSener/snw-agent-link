@@ -1,0 +1,27 @@
+name: snw-agent-link-control
+
+services:
+  headscale:
+    image: ${HEADSCALE_IMAGE:-docker.m.daocloud.io/headscale/headscale:v0.29.2}
+    command: ["serve"]
+    read_only: true
+    tmpfs:
+      - /var/run/headscale
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "3478:3478/udp"
+    volumes:
+      - ./.state/config.yaml:/etc/headscale/config.yaml:ro
+      - ./policy.hujson:/etc/headscale/policy.hujson:ro
+      - headscale-data:/var/lib/headscale
+    healthcheck:
+      test: ["CMD", "headscale", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  headscale-data:

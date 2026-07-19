@@ -1,0 +1,19 @@
+[Unit]
+Description=snw-agent-link peer Agent gateway
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/snw-agent-linkd-wrapper
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.snw-agent-link
+
+[Install]
+WantedBy=default.target

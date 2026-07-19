@@ -1,0 +1,155 @@
+name: snw-agent-link-e2e
+
+x-headscale-image: &headscale-image ${HEADSCALE_IMAGE:-docker.m.daocloud.io/headscale/headscale:v0.29.2}
+
+x-node-common: &node-common
+  build:
+    context: ../..
+    dockerfile: docker/e2e/Dockerfile
+    args:
+      GO_IMAGE: ${GO_IMAGE:-docker.m.daocloud.io/library/golang:1.26.5-bookworm}
+      TAILSCALE_IMAGE: ${TAILSCALE_IMAGE:-docker.m.daocloud.io/tailscale/tailscale:v1.98.9}
+      NODE_IMAGE: ${NODE_IMAGE:-docker.m.daocloud.io/library/node:22.18.0-bookworm-slim}
+      ALPINE_IMAGE: ${ALPINE_IMAGE:-docker.m.daocloud.io/library/alpine:3.23}
+      CODEX_VERSION: ${CODEX_VERSION:-0.142.5}
+      GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+      NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+    target: node-runtime
+  init: true
+  cap_add:
+    - NET_ADMIN
+  devices:
+    - /dev/net/tun:/dev/net/tun
+  extra_hosts:
+    - host.docker.internal:host-gateway
+  environment: &node-environment
+    CODEX_BASE_URL: ${CODEX_BASE_URL:-http://host.docker.internal:15721/v1}
+    CODEX_MODEL: ${CODEX_MODEL:-gpt-5.6-sol}
+    HEADSCALE_URL: http://headscale:8080
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-PROXY_MANAGED}
+    SNW_AGENT_LINK_ADAPTER_PORT: "7780"
+    HEADSCALE_PREAUTH_KEY_FILE: /run/secrets/headscale_preauth_key
+  depends_on:
+    headscale:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "/usr/local/bin/e2e-entrypoint", "healthcheck"]
+    interval: 5s
+    timeout: 5s
+    retries: 36
+    start_period: 30s
+  restart: "no"
+
+services:
+  derper:
+    build:
+      context: ../..
+      dockerfile: docker/e2e/Dockerfile
+      target: derper-runtime
+      args:
+        GO_IMAGE: ${GO_IMAGE:-docker.m.daocloud.io/library/golang:1.26.5-bookworm}
+        ALPINE_IMAGE: ${ALPINE_IMAGE:-docker.m.daocloud.io/library/alpine:3.23}
+        TAILSCALE_VERSION: ${TAILSCALE_VERSION:-v1.98.9}
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+    read_only: true
+    tmpfs:
+      - /var/lib/derper:mode=0700
+    volumes:
+      - ${DERPER_CERT_DIR:?必须由 scripts/deploy-e2e.sh 生成 DERP TLS 证书}:/run/derper-certs:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-check-certificate", "-q", "-O", "/dev/null", "https://derper:3340/"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+    restart: "no"
+
+  headscale:
+    image: *headscale-image
+    command: ["serve"]
+    read_only: true
+    tmpfs:
+      - /var/run/headscale
+    volumes:
+      - ./headscale/config.yaml:/etc/headscale/config.yaml:ro
+      - ${DERP_MAP_FILE:?必须由 scripts/deploy-e2e.sh 生成 DERP map}:/etc/headscale/derp.yaml:ro
+      - ./headscale/policy.hujson:/etc/headscale/policy.hujson:ro
+      - headscale-data:/var/lib/headscale
+    depends_on:
+      derper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "headscale", "health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+    restart: "no"
+
+  node-a:
+    <<: *node-common
+    hostname: ${E2E_NODE_A_NAME:-snw-e2e-a}
+    environment:
+      <<: *node-environment
+      E2E_NODE_NAME: ${E2E_NODE_A_NAME:-snw-e2e-a}
+    secrets:
+      - source: headscale_preauth_key_a
+        target: headscale_preauth_key
+    volumes:
+      - tailscale-a:/var/lib/tailscale
+      - link-a:/var/lib/snw-agent-link
+      - adapter-a:/var/lib/snw-agent-link-adapter
+      - codex-a:/var/lib/codex
+
+  node-b:
+    <<: *node-common
+    hostname: ${E2E_NODE_B_NAME:-snw-e2e-b}
+    environment:
+      <<: *node-environment
+      E2E_NODE_NAME: ${E2E_NODE_B_NAME:-snw-e2e-b}
+    secrets:
+      - source: headscale_preauth_key_b
+        target: headscale_preauth_key
+    volumes:
+      - tailscale-b:/var/lib/tailscale
+      - link-b:/var/lib/snw-agent-link
+      - adapter-b:/var/lib/snw-agent-link-adapter
+      - codex-b:/var/lib/codex
+
+  node-c:
+    <<: *node-common
+    hostname: ${E2E_NODE_C_NAME:-snw-e2e-c}
+    environment:
+      <<: *node-environment
+      E2E_NODE_NAME: ${E2E_NODE_C_NAME:-snw-e2e-c}
+    secrets:
+      - source: headscale_preauth_key_c
+        target: headscale_preauth_key
+    volumes:
+      - tailscale-c:/var/lib/tailscale
+      - link-c:/var/lib/snw-agent-link
+      - adapter-c:/var/lib/snw-agent-link-adapter
+      - codex-c:/var/lib/codex
+
+secrets:
+  headscale_preauth_key_a:
+    file: ${HEADSCALE_PREAUTH_KEY_A_FILE:?必须由 runner 生成 node-a Headscale preauth key}
+  headscale_preauth_key_b:
+    file: ${HEADSCALE_PREAUTH_KEY_B_FILE:?必须由 runner 生成 node-b Headscale preauth key}
+  headscale_preauth_key_c:
+    file: ${HEADSCALE_PREAUTH_KEY_C_FILE:?必须由 runner 生成 node-c Headscale preauth key}
+
+volumes:
+  headscale-data:
+  tailscale-a:
+  tailscale-b:
+  tailscale-c:
+  link-a:
+  link-b:
+  link-c:
+  adapter-a:
+  adapter-b:
+  adapter-c:
+  codex-a:
+  codex-b:
+  codex-c:

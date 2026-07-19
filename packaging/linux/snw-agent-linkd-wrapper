@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+BIN=${SNW_AGENT_LINKD_BIN:-"$HOME/.local/bin/snw-agent-linkd"}
+DATA_DIR=${SNW_AGENT_LINK_DATA_DIR:-"$HOME/.snw-agent-link"}
+TAILSCALE_IP=${TAILSCALE_BIND_IP:-"$(tailscale ip -1 2>/dev/null | head -n 1 || true)"}
+if [ -z "$TAILSCALE_IP" ]; then
+  echo "未检测到 Tailscale IPv4，请设置 TAILSCALE_BIND_IP" >&2
+  exit 1
+fi
+exec "$BIN" --data-dir "$DATA_DIR" --tailscale-bind-ip "$TAILSCALE_IP" --gateway-port 7443

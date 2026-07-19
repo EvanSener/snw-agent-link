@@ -1,0 +1,8 @@
+{
+  "name": "snw-agent-link-codex",
+  "version": "0.1.0",
+  "description": "Codex CLI/app-server adapter for paired Agent-to-Agent communication",
+  "mcpServers": "./.mcp.json",
+  "hooks": "./hooks/hooks.json",
+  "skills": "./skills/"
+}

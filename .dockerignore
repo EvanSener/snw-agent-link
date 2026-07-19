@@ -1,0 +1,11 @@
+.git
+.github
+.data
+bin
+dist
+coverage
+docker/e2e/.env
+docker/e2e/artifacts
+**/__pycache__
+**/*.pyc
+*.log
