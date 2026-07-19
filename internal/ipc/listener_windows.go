@@ -16,7 +16,7 @@ func listen(endpoint string) (net.Listener, error) {
 		return nil, fmt.Errorf("Windows IPC endpoint must be a named pipe")
 	}
 	listener, err := winio.ListenPipe(endpoint, &winio.PipeConfig{
-		SecurityDescriptor: "D:P(A;;GA;;;OW)",
+		SecurityDescriptor: "D:P(A;;GA;;;SY)(A;;GA;;;BA)",
 		MessageMode:        true,
 		InputBufferSize:    64 * 1024,
 		OutputBufferSize:   64 * 1024,

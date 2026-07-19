@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -9,7 +10,11 @@ import (
 func TestRunFailsClosedWhenTailscaleLocalAPIUnavailable(t *testing.T) {
 	config := DefaultConfig(t.TempDir())
 	config.TailscaleBindIP = "100.100.100.10"
-	config.TailscaleLocalAPISocket = "/tmp/snw-agent-link-missing-tailscaled.sock"
+	if runtime.GOOS == "windows" {
+		config.TailscaleLocalAPISocket = `\\.\pipe\snw-agent-link-missing-tailscaled`
+	} else {
+		config.TailscaleLocalAPISocket = "/tmp/snw-agent-link-missing-tailscaled.sock"
+	}
 	service, err := New(config)
 	if err != nil {
 		t.Fatal(err)

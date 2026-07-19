@@ -23,7 +23,7 @@
 - Headscale、域名、ACME 账户、Docker 主机和备份由部署者控制。
 - Tailscale OSS 客户端、Headscale 和操作系统未被完全攻陷。
 - 公网仅开放 Headscale/DERP 所需 `80/TCP`、`443/TCP`、`3478/UDP`。
-- Agent 身份和 capability 私钥保存在受保护的系统密钥库或 `0600` 文件中。
+- Agent 身份和 capability 私钥保存在受 OS 权限保护的本机文件中：Unix 使用 `0700/0600`，Windows 使用 NTFS ACL。
 - 接收 Agent 始终把外部消息作为不可信用户级输入。
 
 ## 非目标
@@ -32,6 +32,7 @@
 - 不替 Agent 实现工具、文件、Shell、联网或沙箱授权。
 - 不提供公网匿名接入、中心邮箱、远程桌面或远程 Codex TUI。
 - Standard profile 不抵抗同一 OS 用户下的任意恶意代码；该场景使用独立 OS 用户或容器。
+- 本地文件密钥不抵抗已获得同一 OS 主体权限或本机管理员权限的攻击者。
 
 ## 失效处理
 

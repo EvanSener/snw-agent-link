@@ -5,9 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -158,7 +158,7 @@ func TestReceiverResumesSignedRangeDownloadAfterRestart(t *testing.T) {
 	if status.Received != int64(len(data)) || status.State != StateCompleted {
 		t.Fatalf("unexpected completed status: %+v", status)
 	}
-	content, err := io.ReadAll(mustOpen(t, filepath.Join(root, "blob-1.blob")))
+	content, err := os.ReadFile(filepath.Join(root, "blob-1.blob"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,17 +190,4 @@ func (roundTripper *failAfterRoundTripper) RoundTrip(request *http.Request) (*ht
 	}
 	roundTripper.remaining--
 	return roundTripper.base.RoundTrip(request)
-}
-
-func mustOpen(t *testing.T, path string) io.ReadCloser {
-	t.Helper()
-	file, err := filepath.Abs(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	opened, err := http.Dir(filepath.Dir(file)).Open(filepath.Base(file))
-	if err != nil {
-		t.Fatal(err)
-	}
-	return opened
 }

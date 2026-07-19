@@ -76,15 +76,14 @@ func NewLocalAPIClient(baseURL string, httpClient *http.Client) *LocalAPIClient 
 }
 
 // NewLocalAPISocketClient connects to the tailscaled Local API over its Unix
-// socket. The socket is intentionally not exposed as a TCP endpoint: the
-// daemon and tailscaled must share the same network namespace and socket ACL.
+// socket or Windows named pipe. The endpoint is intentionally not exposed as
+// TCP: the daemon and tailscaled must share the host's local IPC boundary.
 func NewLocalAPISocketClient(socketPath string) *LocalAPIClient {
 	socketPath = strings.TrimSpace(socketPath)
 	transport := &http.Transport{
 		Proxy: nil,
 		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-			var dialer net.Dialer
-			return dialer.DialContext(ctx, "unix", socketPath)
+			return dialLocalAPI(ctx, socketPath)
 		},
 	}
 	return &LocalAPIClient{

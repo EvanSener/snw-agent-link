@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 )
 
 func loadOrCreateOutboxKey(path string) ([]byte, error) {
@@ -12,7 +13,7 @@ func loadOrCreateOutboxKey(path string) ([]byte, error) {
 		if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
 			return nil, errors.New("outbox key must be a regular non-symlink file")
 		}
-		if info.Mode().Perm() != 0o600 {
+		if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 			return nil, errors.New("outbox key permissions must be 0600")
 		}
 	} else if !errors.Is(err, os.ErrNotExist) {

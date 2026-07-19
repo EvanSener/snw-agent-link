@@ -3,18 +3,20 @@ package daemon
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
 func TestDefaultConfigDerivesPaths(t *testing.T) {
-	config := DefaultConfig("/tmp/snw-agent-link")
-	if config.DatabasePath != "/tmp/snw-agent-link/agent-link.sqlite3" {
+	dataDir := filepath.Join(t.TempDir(), "snw-agent-link")
+	config := DefaultConfig(dataDir)
+	if config.DatabasePath != filepath.Join(dataDir, "agent-link.sqlite3") {
 		t.Fatalf("unexpected database path: %s", config.DatabasePath)
 	}
-	if config.IdentityDir != "/tmp/snw-agent-link/identities" {
+	if config.IdentityDir != filepath.Join(dataDir, "identities") {
 		t.Fatalf("unexpected identity directory: %s", config.IdentityDir)
 	}
-	if config.IPCEndpoint != "/tmp/snw-agent-link/snw-agent-link.sock" {
+	if config.IPCEndpoint != defaultIPCEndpoint(dataDir) {
 		t.Fatalf("unexpected IPC endpoint: %s", config.IPCEndpoint)
 	}
 	if config.GatewayPort != DefaultGatewayPort {
@@ -69,7 +71,7 @@ func TestEnsureDirectoriesUsesPrivatePermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != 0o700 {
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o700 {
 		t.Fatalf("unexpected directory permissions: %o", info.Mode().Perm())
 	}
 }

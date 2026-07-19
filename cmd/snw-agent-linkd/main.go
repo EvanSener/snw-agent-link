@@ -17,7 +17,7 @@ func main() {
 	defaults := daemon.DefaultConfig("")
 	flag.StringVar(&config.DataDir, "data-dir", defaults.DataDir, "daemon data directory")
 	flag.StringVar(&config.TailscaleBindIP, "tailscale-bind-ip", "", "Tailscale IPv4/IPv6 address to bind")
-	flag.StringVar(&config.TailscaleLocalAPISocket, "tailscale-local-api-socket", defaults.TailscaleLocalAPISocket, "Tailscale Local API Unix socket")
+	flag.StringVar(&config.TailscaleLocalAPISocket, "tailscale-local-api-socket", defaults.TailscaleLocalAPISocket, "Tailscale Local API Unix socket or Windows named pipe")
 	flag.IntVar(&config.GatewayPort, "gateway-port", defaults.GatewayPort, "A2A gateway port")
 	flag.StringVar(&config.Version, "version", defaults.Version, "daemon version")
 	flag.Parse()
@@ -29,6 +29,13 @@ func main() {
 	service, err := daemon.New(validated)
 	if err != nil {
 		fatal(err)
+	}
+	handled, err := runPlatformService(service)
+	if err != nil {
+		fatal(err)
+	}
+	if handled {
+		return
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
