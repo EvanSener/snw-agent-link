@@ -89,7 +89,19 @@ scripts/join-self-hosted-tailnet.sh \
 
 ## 安装 Agent 节点
 
-加入自建 Tailnet 后，构建并安装 linkd：
+加入自建 Tailnet 后，可从
+[GitHub Releases](https://github.com/EvanSener/snw-agent-link/releases) 下载对应平台包：
+
+```bash
+sha256sum -c checksums.sha256
+gh attestation verify snw-agent-link-<os>-<arch>.<archive> \
+  --repo EvanSener/snw-agent-link
+```
+
+macOS 没有 `sha256sum` 时使用 `shasum -a 256 -c checksums.sha256`。解压后在包目录
+执行 `install.sh`；Windows 在管理员 PowerShell 执行 `install.ps1`。
+
+也可以从源码构建并安装：
 
 ```bash
 go build -o bin/snw-agent-link ./cmd/snw-agent-link

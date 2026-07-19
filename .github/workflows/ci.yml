@@ -39,3 +39,11 @@ jobs:
         with:
           go-version: '1.26.x'
       - run: ./scripts/build-release.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: snw-agent-link-release-candidate
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/checksums.sha256
+          if-no-files-found: error
